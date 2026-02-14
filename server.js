@@ -13,34 +13,38 @@ mongoose.connect(process.env.MONGODB_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Define Mongoose schema and model
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true }
+// Define Mongoose schema and model for private messages
+const messageSchema = new mongoose.Schema({
+  identity: { type: String, required: true },
+  message: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
 });
-const User = mongoose.model('User', userSchema);
+const PrivateMessage = mongoose.model('PrivateMessage', messageSchema);
+
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Serve index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API to get all usernames
-app.get('/api/users', async (req, res) => {
-  const users = await User.find().sort({ _id: -1 });
-  res.json(users);
-});
-
-// API to add a username
-app.post('/api/users', async (req, res) => {
-  const { username } = req.body;
-  if (!username) return res.status(400).json({ error: 'Username is required' });
-  const user = new User({ username });
-  await user.save();
-  res.status(201).json(user);
+// API to submit a private message
+app.post('/api/message', async (req, res) => {
+  const { identity, message } = req.body;
+  if (!identity || !message) {
+    return res.status(400).json({ error: 'Identity and message are required' });
+  }
+  try {
+    const newMessage = new PrivateMessage({ identity, message });
+    await newMessage.save();
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save message' });
+  }
 });
 
 app.listen(PORT, () => {

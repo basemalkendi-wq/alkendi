@@ -1,51 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Usernames App</title>
+  <title>رسالة خاصة إلى الكِندي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    form { margin-bottom: 1em; }
-    input[type="text"] { padding: 0.5em; font-size: 1em; }
-    button { padding: 0.5em 1em; font-size: 1em; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 0.25em 0; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Cairo', Arial, sans-serif;
+      background: linear-gradient(135deg, #e0e7ef 0%, #f7fafc 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      padding: 2.5rem 2rem 2rem 2rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #2d3748;
+      letter-spacing: 0.5px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    label {
+      font-size: 1rem;
+      color: #4a5568;
+      text-align: right;
+      margin-bottom: 0.3rem;
+    }
+    input, textarea {
+      font-family: inherit;
+      font-size: 1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0.7em 1em;
+      background: #f7fafc;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, textarea:focus {
+      border: 1.5px solid #3182ce;
+      background: #fff;
+    }
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+    button {
+      background: #38a169;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.8em 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2f855a;
+    }
+    .toast {
+      display: none;
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #38a169;
+      color: #fff;
+      padding: 1em 1.5em;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-shadow: 0 2px 12px rgba(56,161,105,0.15);
+      z-index: 1000;
+      animation: fadeInOut 3s linear;
+    }
+    .toast.show {
+      display: block;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @media (max-width: 500px) {
+      .container {
+        padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+      }
+      .toast {
+        right: 1rem;
+        left: 1rem;
+        bottom: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Save Username</h1>
-  <form id="userForm">
-    <input type="text" id="username" name="username" placeholder="Enter username" required />
-    <button type="submit">Save</button>
-  </form>
-  <h2>Saved Usernames</h2>
-  <ul id="userList"></ul>
+  <div class="container">
+    <h1>مرحباً، ضع رسالتك الخاصة إلى الكِندي وسيتم الرد عليك في أقرب وقت</h1>
+    <form id="privateMsgForm" autocomplete="off">
+      <div>
+        <label for="identity">هويتك (اسم، لقب، أو رقم هاتف):</label>
+        <input type="text" id="identity" name="identity" required maxlength="100" placeholder="مثال: أحمد أو @ahmad أو 05xxxxxxx">
+      </div>
+      <div>
+        <label for="message">رسالتك الخاصة:</label>
+        <textarea id="message" name="message" required maxlength="1000" placeholder="اكتب رسالتك هنا..."></textarea>
+      </div>
+      <button type="submit">إرسال الرسالة</button>
+    </form>
+  </div>
+  <div class="toast" id="toast">تم إرسال رسالتك إلى الكِندي بنجاح، وسيراها في أقرب وقت ويرد عليها</div>
   <script>
-    async function fetchUsers() {
-      const res = await fetch('/api/users');
-      const users = await res.json();
-      const list = document.getElementById('userList');
-      list.innerHTML = '';
-      users.forEach(user => {
-        const li = document.createElement('li');
-        li.textContent = user.username;
-        list.appendChild(li);
-      });
-    }
-    document.getElementById('userForm').addEventListener('submit', async function(e) {
+    const form = document.getElementById('privateMsgForm');
+    const toast = document.getElementById('toast');
+    form.addEventListener('submit', async function(e) {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
-      if (!username) return;
-      await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-      });
-      document.getElementById('username').value = '';
-      fetchUsers();
+      const identity = form.identity.value.trim();
+      const message = form.message.value.trim();
+      if (!identity || !message) return;
+      try {
+        const res = await fetch('/api/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity, message })
+        });
+        if (res.ok) {
+          form.reset();
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+      } catch (err) {}
     });
-    fetchUsers();
   </script>
 </body>
 </html>
